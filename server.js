@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(cors());
 
 const dbURI = process.env.MONGODB_URI;
-sgMail.setApiKey(process.env.EMAIL_PASS);
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 mongoose
   .connect(dbURI)
