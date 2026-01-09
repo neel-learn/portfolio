@@ -1,4 +1,5 @@
 const express = require("express");
+const sgMail = require("@sendgrid/mail");
 const mongoose = require("mongoose");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
@@ -9,6 +10,7 @@ app.use(express.json());
 app.use(cors());
 
 const dbURI = process.env.MONGODB_URI;
+sgMail.setApiKey(process.env.EMAIL_PASS);
 
 mongoose
   .connect(dbURI)
@@ -234,15 +236,16 @@ app.post("/api/contact", async (req, res) => {
     const newMessage = new Message({ email, subject, message});
     await newMessage.save();
 
-    const mailOptions = {
-      from: email,
-      to: process.env.EMAIL_USER,
-      subject: `New Message from  Portfolio: ${subject}`,
-      text: `You have received a new message from: ${email}\n\nSubject: ${subject} \n\nMessage:\n${message}`
+    const msg = {
+      to: process.env.EMAIL_TO, // Your receiving email (the one you want to read messages at)
+      from: process.env.EMAIL_USER, // MUST be the exact email you verified in SendGrid
+      replyTo: email, // This allows you to reply directly to the person who filled the form
+      subject: `New Message from Portfolio: ${subject}`,
+      text: `From: ${email}\n\nMessage:\n${message}`,
+      html: `<strong>From:</strong> ${email}<br><br><strong>Message:</strong><p>${message}</p>`,
     };
 
-    await transporter.verify();
-    await transporter.sendMail(mailOptions);
+    await sgMail.send(msg);
 
     res.status(201).json({ success: true, message: "Message saved!" });
   } catch (err) {
