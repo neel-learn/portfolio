@@ -48,15 +48,7 @@ const MessageSchema = new mongoose.Schema({
 const Portfolio = mongoose.model("Portfolio", ProjectSchema);
 const Message = mongoose.model("Message", MessageSchema);
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+
 
 app.post("/api/seed-data", async (req, res) => {
   try {
