@@ -10,18 +10,21 @@ app.use(express.json());
 app.set('trust proxy', true);
 const allowedOrigins = [
   "https://neel-learn.github.io",
-  "http://www.neelratanpatel.in", // Add your custom domain
-  "https://neelratanpatel.in",
-  "http://localhost:5173"
+  "https://neelratanpatel.in",      // New Custom Domain
+  "http://neelratanpatel.in",       // For non-SSL testing
+  "https://www.neelratanpatel.in",  // With WWW
+  "http://www.neelratanpatel.in",   // With WWW
+  "http://localhost:5173"           // Local development
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("CORS policy violation"));
+    // Allow requests with no origin (like mobile apps)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error("CORS policy violation for origin: " + origin), false);
     }
+    return callback(null, true);
   }
 }));
 
