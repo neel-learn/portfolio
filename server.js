@@ -8,7 +8,22 @@ require("dotenv").config();
 const app = express();
 app.use(express.json());
 app.set('trust proxy', true);
-app.use(cors({ origin: "https://www.neelratanpatel.in" }));
+const allowedOrigins = [
+  "https://neel-learn.github.io",
+  "http://www.neelratanpatel.in", // Add your custom domain
+  "https://neelratanpatel.in",
+  "http://localhost:5173"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS policy violation"));
+    }
+  }
+}));
 
 const dbURI = process.env.MONGODB_URI;
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
