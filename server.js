@@ -7,7 +7,8 @@ require("dotenv").config();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: "https://neel-learn.github.io" }));
+app.set('trust proxy', true);
 
 const dbURI = process.env.MONGODB_URI;
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -34,6 +35,7 @@ const ProjectSchema = new mongoose.Schema({
     {
       ip: String,
       liked: { type: Boolean, default: false },
+      timestamp: { type: String }
     },
   ],
 });
@@ -248,11 +250,25 @@ app.post("/api/contact", async (req, res) => {
   }
 });
 
-app.use(express.json());
-app.use(cors());
+// app.use(express.json());
+// app.use(cors());
+
+
+//like button
 
 app.patch("/api/portfolio/like", async (req, res) => {
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  let ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+
+  const getFormattedDate = () => {
+    const now = new Date();
+    const date = now.toLocaleDateString('en-GB');
+    const time = now.toLocaleTimeString('en-GB', { hour12: false});
+    return `${date} : ${time}`;
+  }
+
+  if (ip && ip.includes(',')){
+    ip = ip.split(',')[0].trim();
+  }
 
   try {
     const portfolio = await Portfolio.findOne();
@@ -262,16 +278,16 @@ app.patch("/api/portfolio/like", async (req, res) => {
     const userIndex = portfolio.userInteractions.findIndex((u) => u.ip === ip);
 
     let isNowLiked;
+    const currentTime = getFormattedDate();
 
     if (userIndex !== -1) {
-      // MATCH FOUND: Toggle the boolean and adjust the count
       isNowLiked = !portfolio.userInteractions[userIndex].liked;
       portfolio.userInteractions[userIndex].liked = isNowLiked;
+      portfolio.userInteractions[userIndex].timestamp = currentTime;
       portfolio.likes += isNowLiked ? 1 : -1;
     } else {
-      // NO MATCH: New IP visitor. Store it and set liked to true.
       isNowLiked = true;
-      portfolio.userInteractions.push({ ip: ip, liked: isNowLiked });
+      portfolio.userInteractions.push({ ip: ip, liked: isNowLiked , timestamp: currentTime });
       portfolio.likes += 1;
     }
 
@@ -287,7 +303,12 @@ app.patch("/api/portfolio/like", async (req, res) => {
 });
 
 app.get("/api/portfolio", async (req, res) => {
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  let ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  
+  if (ip && ip.includes(',')){
+    ip = ip.split(',')[0].trim();
+  }
+
   try {
     const data = await Portfolio.findOne();
     if (!data) {
@@ -297,10 +318,12 @@ app.get("/api/portfolio", async (req, res) => {
           message: "No portfolio data found. Please seed the database.",
         });
     }
-    const userStatus = data.userInteractions.find((u) => u.ip == ip);
+
+    const userStatus = data.userInteractions.find((u) => u.ip === ip);
     res.json({
       ...data._doc,
       currentUserLiked: userStatus ? userStatus.liked : false,
+      likes: data.likes
     });
   } catch (err) {
     res.status(500).json({ error: "Internal Server Error: " + err.message });
