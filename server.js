@@ -8,7 +8,7 @@ require("dotenv").config();
 const app = express();
 app.use(express.json());
 app.set('trust proxy', true);
-app.use(cors({ origin: "https://neel-learn.github.io" }));
+app.use(cors({ origin: "https://www.neelratanpatel.in" }));
 
 const dbURI = process.env.MONGODB_URI;
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
